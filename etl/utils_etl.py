@@ -1,24 +1,33 @@
 from sqlalchemy import Engine, text
 
-def new_data(conne: Engine) -> bool:
-    queryo = text('select saved from hecho_atencion order by saved desc limit 1;')
-    queryt = text(''' select date from dim_fecha where key_dim_fecha =
-    (select key_fecha_atencion from hecho_atencion order by key_fecha_atencion desc limit 1) ;''')
-    with conne.connect() as con:
-        try:
-            rs1 = con.execute(queryo)
-            rs2 = con.execute(queryt)
-            lastupdate = rs1.fetchone()
-            lastdate = rs2.fetchone()
-            if lastupdate is None or lastdate is None:
-                return True
-            if lastdate.date() > lastupdate:
-                return True
-            print(f'''No hay datos nuevos desde la ultima fecha de carga {lastupdate}''')
-            return False
-        except Exception as e:
-            print('[*]', e)
-            return False
+def new_data(conn_oltp: Engine, conn_olap: Engine) -> bool:
+    # Ultimo id en la tabla de hecho_servicios
+    query_ultimo_id_olap = text('select max(id_servicio) from hecho_servicios;')
+
+    # Ultimo id en la tabla de mensajeria_servicio del OLTP
+    query_ultimo_id_oltp = text('select max(id) from mensajeria_servicio;')
+
+    with conn_oltp.connect() as con:
+        rs = con.execute(query_ultimo_id_oltp)
+        ultimo_id_oltp = rs.fetchone()[0]
+        if ultimo_id_oltp is None:
+            return True
+        print(f'Ultimo id en la tabla de mensajeria_servicio: {ultimo_id_oltp}')
+
+    with conn_olap.connect() as con:
+        rs = con.execute(query_ultimo_id_olap)
+        ultimo_id_olap = rs.fetchone()[0]
+        if ultimo_id_olap is None:
+            print(f'No hay datos en la tabla de hecho_servicios')
+            return True
+        print(f'Ultimo id en la tabla de hecho_servicios: {ultimo_id_olap}')
+
+    if ultimo_id_oltp > ultimo_id_olap:
+        print(f'Hay nuevos datos en la tabla de mensajeria_servicio')
+        return True
+    else:
+        print(f'No hay nuevos datos en la tabla de mensajeria_servicio')
+        return False
 
 
 def push_dimensions(co_sa, etl_conn):
