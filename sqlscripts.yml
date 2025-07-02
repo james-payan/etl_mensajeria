@@ -47,6 +47,7 @@ hecho_servicios :
   key_dim_mensajero          bigint references dim_mensajero(key_dim_mensajero),
   key_dim_tiempo             bigint references dim_tiempo(key_dim_tiempo),
   key_dim_sede               bigint references dim_sede(key_dim_sede),
+  id_servicio                integer,
   tiempo_total_espera        integer,
   tiempo_espera_inicial      integer,
   tiempo_espera_asignado     integer,
