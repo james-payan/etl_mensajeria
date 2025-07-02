@@ -1,0 +1,57 @@
+dim_cliente :
+  create table dim_cliente
+  (
+  key_dim_cliente SERIAL not null
+  primary key,
+  id_cliente      integer,
+  nombre_cliente  varchar(200)
+  );
+
+dim_mensajero :
+  create table dim_mensajero
+  (
+  key_dim_mensajero SERIAL not null
+  primary key,
+  id_mensajero     integer,
+  nombre_mensajero varchar(200)
+  );
+
+dim_tiempo :
+  create table dim_tiempo
+  (
+  key_dim_tiempo SERIAL not null
+  primary key,
+  fecha_hora     timestamp,
+  dia_semana     varchar(15),
+  mes            varchar(15),
+  hora_dia       integer
+  );
+
+dim_sede :
+  create table dim_sede
+  (
+  key_dim_sede SERIAL not null
+  primary key,
+  id_sede       integer,
+  nombre_sede   varchar(200),
+  ciudad        varchar(200),
+  departamento  varchar(200)
+  );
+
+hecho_servicios :
+  create table hecho_servicios
+  (
+  key_hecho_servicios        SERIAL not null
+  primary key,
+  key_dim_cliente            bigint references dim_cliente(key_dim_cliente),
+  key_dim_mensajero          bigint references dim_mensajero(key_dim_mensajero),
+  key_dim_tiempo             bigint references dim_tiempo(key_dim_tiempo),
+  key_dim_sede               bigint references dim_sede(key_dim_sede),
+  tiempo_total_espera        integer,
+  tiempo_espera_inicial      integer,
+  tiempo_espera_asignado     integer,
+  tiempo_espera_recogido     integer,
+  tiempo_espera_en_destino   integer,
+  cantidad_novedades_tipo_1  integer,
+  cantidad_novedades_tipo_2  integer
+  );
