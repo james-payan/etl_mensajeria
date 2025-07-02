@@ -2,7 +2,7 @@ import pandas as pd
 from sqlalchemy.engine import Engine
 
 
-def extract(tables : list,conection: Engine)-> pd.DataFrame:
+def extract(tables : list, conection: Engine)-> pd.DataFrame:
     """
     :param conection: the conectionnection to the database
     :param tables: the tables to extract
@@ -15,40 +15,6 @@ def extract(tables : list,conection: Engine)-> pd.DataFrame:
     return a
 
 
-
-def extract_ips(conection: Engine):
-    """
-    Extract data from database where the conectionexion established
-    :param conection:
-    :return:
-    """
-    dim_ips = pd.read_sql_table('ips', conection)
-    return dim_ips
-
-
-
-def extract_medico(conection: Engine):
-    dim_medico = pd.read_sql_table('medico', conection)
-    return dim_medico
-
-
-
-
-def extract_persona(conection: Engine):
-    beneficiarios = pd.read_sql_table("beneficiario", conection)
-    cotizantes = pd.read_sql_table("cotizante", conection)
-    cotizante_beneficiario = pd.read_sql_table("cotizante_beneficiario", conection)
-    return [beneficiarios, cotizantes, cotizante_beneficiario]
-
-
-
-
-def extract_trans_servicio(conection: Engine):
-    df_citas = pd.read_sql_table('citas_generales', conection)
-    df_urgencias = pd.read_sql_table('urgencias', conection)
-    df_hosp = pd.read_sql_table('hospitalizaciones', conection)
-    remisiones = pd.read_sql_table('remisiones', conection)
-    return [df_citas, df_urgencias, df_hosp,remisiones]
 
 
 
