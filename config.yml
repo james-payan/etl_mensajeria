@@ -1,0 +1,18 @@
+MENSAJERIA_OLTP:
+  drivername: postgresql
+  dbname: servicio_mensajeria
+  user: james
+  password: 123456
+  host: localhost
+  port: 5432
+
+MENSAJERIA_OLAP:
+  drivername: postgresql
+  dbname: data_warehouse_mensajeria
+  user: james
+  password: 123456
+  host: localhost
+  port: 5432
+
+LOAD_DIMENSIONS:
+  True
