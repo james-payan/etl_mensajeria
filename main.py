@@ -45,8 +45,8 @@ if not tnames:
     
     # Cargar y ejecutar scripts de creación SQL desde archivo YAML
     with open('sqlscripts.yml', 'r') as f:
-        sql = yaml.safe_load(f)
-        for key, val in sql.items():
+        tablas_olap = yaml.safe_load(f)
+        for key, val in tablas_olap.items():
             print("creando tabla: ", key)
             cur.execute(val)
             conn.commit()
@@ -55,12 +55,28 @@ if not tnames:
 else:
     print("Ya existen tablas en la base de datos OLAP: ", tnames)
 
-# # ---- Procesamiento de Datos ----
-# # Verificar si hay nuevos datos en la base de datos OLTP
-# if utils_etl.new_data(olap_conn):
-#     # ---- Carga de Dimensiones ----
-#     # Extraer datos de dimensiones de la base de datos OLTP
-#     if config['LOAD_DIMENSIONS']:
+# ---- Procesamiento de Datos ----
+# Verificar si hay nuevos datos en la base de datos OLTP
+if utils_etl.new_data(oltp_conn, olap_conn):
+    print("hay nuevos datos en la base de datos OLTP")
+    # ---- Carga de Dimensiones ----
+    # Extraer datos de dimensiones de la base de datos OLTP
+    if config['LOAD_DIMENSIONS']:
+        print("Extraer datos de la base de datos OLTP")
+        tablas_mensajero = extract.extract(['mensajeria_servicio', 'clientes_mensajeroaquitoy', 'auth_user'], oltp_conn)
+
+        print("transformando datos")
+        dim_mensajero = transform.transform_mensajero(tablas_mensajero)
+        print("total mensajeros: ", len(dim_mensajero))
+
+        print("cargando datos en la base de datos OLAP")
+        load.load(dim_mensajero, olap_conn, 'dim_mensajero', True)
+
+
+else:
+    print("no hay nuevos datos en la base de datos OLTP")
+
+
 #         dim_ips = extract.extract_ips(oltp_conn)
 #         dim_persona = extract.extract_persona(oltp_conn)
 #         dim_medico = extract.extract_medico(oltp_conn)
