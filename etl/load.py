@@ -48,9 +48,13 @@ def load(table: DataFrame, etl_conn: Engine, tname, replace: bool = False):
     # with etl_conn.connect() as conn:
     #     conn.execute(statement)
     if replace :
+        print(f'reemplazando datos de la tabla {tname}')
         with etl_conn.connect() as conn:
+            print(f'Eliminando datos de la tabla {tname}')
             conn.execute(text(f'Delete from {tname}'))
-            conn.close()
+            conn.commit()
+        print(f'insertando los nuevos datos de la tabla {tname}')
         table.to_sql(f'{tname}', etl_conn, if_exists='append', index=False)
     else :
+        print(f'insertando datos de la tabla {tname}')
         table.to_sql(f'{tname}', etl_conn, if_exists='append', index=False)
