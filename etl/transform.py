@@ -10,6 +10,25 @@ from mlxtend.frequent_patterns import apriori
 from mlxtend.preprocessing import TransactionEncoder
 from pandas import DataFrame
 
+def transform_sede(tablas: list[DataFrame]) -> DataFrame:
+    sede, ciudad = tablas
+
+    ciudad = ciudad[['ciudad_id', 'nombre']].rename(columns={'nombre': 'ciudad'})
+
+    dim_sede = sede[['sede_id', 'nombre', 'ciudad_id']].rename(columns={'sede_id': 'id_sede', 'nombre': 'nombre_sede'})
+    
+    dim_sede = dim_sede.merge(
+        ciudad, 
+        left_on='ciudad_id', right_on='ciudad_id', 
+        how='left'
+    )[['id_sede', 'nombre_sede', 'ciudad']]
+    return dim_sede
+
+def transform_cliente(tablas: list[DataFrame]) -> DataFrame:
+    cliente = tablas[0]
+    dim_cliente = cliente[['cliente_id', 'nombre']].rename(columns={'cliente_id': 'id_cliente', 'nombre': 'nombre_cliente'})
+    return dim_cliente
+
 def transform_mensajero(tablas: list[DataFrame]) -> DataFrame:
     mensajero, user = tablas
 
