@@ -66,6 +66,7 @@ if utils_etl.new_data(oltp_conn, olap_conn):
         tablas_mensajero = extract.extract(['clientes_mensajeroaquitoy', 'auth_user'], oltp_conn)
         tablas_clientes = extract.extract(['cliente'], oltp_conn)
         tablas_sede = extract.extract(['sede', 'ciudad'], oltp_conn)
+        tablas_tiempo = extract.extract(['mensajeria_servicio'], oltp_conn)
 
         print("transformando datos")
         dim_mensajero = transform.transform_mensajero(tablas_mensajero)
@@ -74,11 +75,14 @@ if utils_etl.new_data(oltp_conn, olap_conn):
         print("total clientes: ", len(dim_cliente))
         dim_sede = transform.transform_sede(tablas_sede)
         print("total sedes: ", len(dim_sede))
+        dim_tiempo = transform.transform_tiempo(tablas_tiempo)
+        print("total tiempo: ", len(dim_tiempo))
 
         print("cargando datos en la base de datos OLAP")
         load.load(dim_mensajero, etl_conn=olap_conn, tname='dim_mensajero', replace=True)
         load.load(dim_cliente, etl_conn=olap_conn, tname='dim_cliente', replace=True)
         load.load(dim_sede, etl_conn=olap_conn, tname='dim_sede', replace=True)
+        load.load(dim_tiempo, etl_conn=olap_conn, tname='dim_tiempo', replace=True)
 
 
 

@@ -21,7 +21,7 @@ dim_tiempo :
   (
   key_dim_tiempo SERIAL not null
   primary key,
-  fecha_hora     timestamp,
+  fecha          date,
   dia_semana     varchar(15),
   mes            varchar(15),
   hora_dia       integer

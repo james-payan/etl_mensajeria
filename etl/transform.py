@@ -10,6 +10,36 @@ from mlxtend.frequent_patterns import apriori
 from mlxtend.preprocessing import TransactionEncoder
 from pandas import DataFrame
 
+def transform_tiempo(tablas: list[DataFrame]) -> DataFrame:
+
+    # Obtener el DataFrame de servicio que contiene las fechas
+    servicio = tablas[0]
+    
+    # Obtener la primera fecha y el último año de los datos
+    first_date = servicio['fecha_solicitud'].min()
+    last_year = servicio['fecha_solicitud'].max().year
+    
+    # Crear fecha final (31 de diciembre del último año)
+    end_date = datetime(last_year, 12, 31).date()
+    
+    # Generar un rango de fechas diario desde la primera fecha hasta la fecha final
+    date_range = pd.date_range(start=first_date, end=end_date, freq='D')
+    
+    # Crear DataFrame base con todas las fechas
+    dim_tiempo = pd.DataFrame(date_range, columns=['fecha'])
+    
+    # Expandir para incluir las 24 horas de cada día
+    dim_tiempo = dim_tiempo.loc[dim_tiempo.index.repeat(24)].reset_index(drop=True)
+    
+    # Agregar columna de hora (0-23) para cada fecha
+    dim_tiempo['hora_dia'] = list(range(24)) * len(date_range)
+    
+    # Agregar columnas de día y mes
+    dim_tiempo['dia_semana'] = dim_tiempo['fecha'].dt.day_name()
+    dim_tiempo['mes'] = dim_tiempo['fecha'].dt.month_name()
+
+    return dim_tiempo
+
 def transform_sede(tablas: list[DataFrame]) -> DataFrame:
     sede, ciudad = tablas
 
