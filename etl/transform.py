@@ -10,6 +10,55 @@ from mlxtend.frequent_patterns import apriori
 from mlxtend.preprocessing import TransactionEncoder
 from pandas import DataFrame
 
+def transform_hecho_servicios(tablas: list[DataFrame]) -> DataFrame:
+    servicio, cliente_usuario, estado_servicio, dim_tiempo, dim_sede, dim_cliente, dim_mensajero = tablas
+
+    # Asigna el mensajero usando una estrategia de respaldo - si mensajero3_id está vacío, usa mensajero2_id,
+    # si mensajero2_id está vacío usa mensajero_id. Toma el primer valor no nulo encontrado.
+    servicio['mensajero_id'] = servicio[
+        ['mensajero3_id', 'mensajero2_id', 'mensajero_id']
+    ].bfill(axis=1).iloc[:, 0]
+
+    servicio['hora_solicitud'] = servicio['hora_solicitud'].apply(lambda x: x.hour if pd.notnull(x) else None)
+
+    servicio = servicio[['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'usuario_id']]
+
+    hecho_servicios = servicio.merge(cliente_usuario, left_on='usuario_id', right_on='id', how='left')[
+        ['id_x', 'cliente_id_x', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id']
+    ].rename(columns={'id_x': 'id', 'cliente_id_x': 'cliente_id'})
+
+    hecho_servicios = hecho_servicios.merge(dim_tiempo, left_on=['fecha_solicitud', 'hora_solicitud'], right_on=['fecha', 'hora_dia'], how='left')[
+        ['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id', 'key_dim_tiempo']
+    ]
+
+    hecho_servicios = hecho_servicios.merge(dim_sede, left_on='sede_id', right_on='id_sede', how='left')[
+        ['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id', 'key_dim_tiempo', 'key_dim_sede']
+    ]
+
+    hecho_servicios = hecho_servicios.merge(dim_cliente, left_on='cliente_id', right_on='id_cliente', how='left')[
+        ['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id',
+         'key_dim_tiempo', 'key_dim_sede', 'key_dim_cliente']
+    ]
+
+    hecho_servicios = hecho_servicios.merge(dim_mensajero, left_on='mensajero_id', right_on='id_mensajero', how='left')[
+        ['id', 'key_dim_tiempo', 'key_dim_sede', 'key_dim_cliente', 'key_dim_mensajero']
+    ]
+
+    # Renombrar columna id a id_servicio para coincidir con el esquema
+    hecho_servicios = hecho_servicios.rename(columns={'id': 'id_servicio'})
+
+    # Inicializar las columnas faltantes con None
+    hecho_servicios['tiempo_total_espera'] = None
+    hecho_servicios['tiempo_espera_inicial'] = None
+    hecho_servicios['tiempo_espera_asignado'] = None  
+    hecho_servicios['tiempo_espera_recogido'] = None
+    hecho_servicios['tiempo_espera_en_destino'] = None
+    hecho_servicios['cantidad_novedades_tipo_1'] = None
+    hecho_servicios['cantidad_novedades_tipo_2'] = None
+
+    return hecho_servicios
+
+
 def transform_tiempo(tablas: list[DataFrame]) -> DataFrame:
 
     # Obtener el DataFrame de servicio que contiene las fechas
