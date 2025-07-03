@@ -84,7 +84,21 @@ if utils_etl.new_data(oltp_conn, olap_conn):
         load.load(dim_sede, etl_conn=olap_conn, tname='dim_sede', replace=True)
         load.load(dim_tiempo, etl_conn=olap_conn, tname='dim_tiempo', replace=True)
 
+    # ---- Carga de Hechos ----
+    print("Extraer datos de la base de datos OLTP para el hecho de servicios")
+    tablas_servicios_oltp = extract.extract(['mensajeria_servicio', 'clientes_usuarioaquitoy', 'mensajeria_estadosservicio'], oltp_conn)
+    print("Extraer datos de la base de datos OLAP para las dimensiones")
+    tablas_dimensiones_olap = extract.extract(['dim_tiempo', 'dim_sede', 'dim_cliente', 'dim_mensajero'], olap_conn)
 
+    print("transformando datos para el hecho de servicios")
+    hecho_servicios = transform.transform_hecho_servicios(tablas_servicios_oltp + tablas_dimensiones_olap)
+    print("total servicios: ", len(hecho_servicios))
+
+    print("cargando datos en la base de datos OLAP para el hecho de servicios")
+    load.load(hecho_servicios, etl_conn=olap_conn, tname='hecho_servicios', replace=True)
+
+
+    print("Carga Satisfactoria hecho de servicios")
 
 else:
     print("no hay nuevos datos en la base de datos OLTP")
