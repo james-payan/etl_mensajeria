@@ -34,8 +34,7 @@ dim_sede :
   primary key,
   id_sede       integer,
   nombre_sede   varchar(200),
-  ciudad        varchar(200),
-  departamento  varchar(200)
+  ciudad        varchar(200)
   );
 
 hecho_servicios :
