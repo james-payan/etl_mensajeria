@@ -11,19 +11,7 @@ from mlxtend.preprocessing import TransactionEncoder
 from pandas import DataFrame
 
 def transform_mensajero(tablas: list[DataFrame]) -> DataFrame:
-    servicio, mensajero, user = tablas
-
-    # Asigna el mensajero usando una estrategia de respaldo - si mensajero3_id está vacío, usa mensajero2_id,
-    # si mensajero2_id está vacío usa mensajero_id. Toma el primer valor no nulo encontrado.
-    servicio['mensajero_asignado'] = servicio[
-        ['mensajero3_id', 'mensajero2_id', 'mensajero_id']
-    ].bfill(axis=1).iloc[:, 0]
-
-    # Agrupar por mensajero_asignado y eliminar registros nulos
-    servicio = servicio[servicio['mensajero_asignado'].notna()]
-    servicio = servicio.groupby('mensajero_asignado').first().reset_index()
-
-    assert servicio['mensajero_asignado'].notna().all(), "Hay valores nulos en la columna mensajero_asignado"
+    mensajero, user = tablas
 
     # Unir las tablas para obtener información del usuario
     mensajero_user = mensajero[['id', 'user_id']].merge(user[['id', 'first_name', 'last_name', 'username']], 
@@ -33,10 +21,10 @@ def transform_mensajero(tablas: list[DataFrame]) -> DataFrame:
                              .rename(columns={'id_x': 'mensajero_id'})
 
     # Seleccionar y renombrar las columnas relevantes
-    dim_mensajero = servicio.merge(mensajero_user, left_on='mensajero_asignado', right_on='mensajero_id', how='left')
+    dim_mensajero = mensajero_user[['mensajero_id', 'first_name', 'last_name', 'username']]
     # Crear columna nombre_mensajero concatenando first_name y last_name
     dim_mensajero['nombre_mensajero'] = dim_mensajero['first_name'] + ' ' + dim_mensajero['last_name'] + ' (' + dim_mensajero['username'] + ')'
-    dim_mensajero = dim_mensajero[['mensajero_asignado', 'nombre_mensajero']].rename(columns={'mensajero_asignado': 'id_mensajero'})
+    dim_mensajero = dim_mensajero[['mensajero_id', 'nombre_mensajero']].rename(columns={'mensajero_id': 'id_mensajero'})
     # Eliminar duplicados
     dim_mensajero = dim_mensajero.drop_duplicates()
 

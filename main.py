@@ -63,14 +63,15 @@ if utils_etl.new_data(oltp_conn, olap_conn):
     # Extraer datos de dimensiones de la base de datos OLTP
     if config['LOAD_DIMENSIONS']:
         print("Extraer datos de la base de datos OLTP")
-        tablas_mensajero = extract.extract(['mensajeria_servicio', 'clientes_mensajeroaquitoy', 'auth_user'], oltp_conn)
+        tablas_mensajero = extract.extract(['clientes_mensajeroaquitoy', 'auth_user'], oltp_conn)
 
         print("transformando datos")
         dim_mensajero = transform.transform_mensajero(tablas_mensajero)
         print("total mensajeros: ", len(dim_mensajero))
 
         print("cargando datos en la base de datos OLAP")
-        load.load(dim_mensajero, olap_conn, 'dim_mensajero', True)
+        load.load(dim_mensajero, etl_conn=olap_conn, tname='dim_mensajero', replace=True)
+
 
 
 else:
