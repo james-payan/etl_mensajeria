@@ -47,11 +47,11 @@ hecho_servicios :
   key_dim_tiempo             bigint references dim_tiempo(key_dim_tiempo),
   key_dim_sede               bigint references dim_sede(key_dim_sede),
   id_servicio                integer unique,
-  tiempo_total_espera        integer,
-  tiempo_espera_inicial      integer,
-  tiempo_espera_asignado     integer,
-  tiempo_espera_recogido     integer,
-  tiempo_espera_en_destino   integer,
+  tiempo_total_espera        interval,
+  tiempo_espera_inicial      interval, 
+  tiempo_espera_asignado     interval,
+  tiempo_espera_recogido     interval,
+  tiempo_espera_en_destino   interval,
   cantidad_novedades_tipo_1  integer,
   cantidad_novedades_tipo_2  integer
   );
