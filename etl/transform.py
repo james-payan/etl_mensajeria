@@ -19,40 +19,59 @@ def transform_hecho_servicios(tablas: list[DataFrame]) -> DataFrame:
         ['mensajero3_id', 'mensajero2_id', 'mensajero_id']
     ].bfill(axis=1).iloc[:, 0]
 
+    servicio['fecha_solicitud_str'] = servicio['fecha_solicitud'].dt.strftime('%Y-%m-%d')
+    servicio['hora_solicitud_str'] = servicio['hora_solicitud'].apply(lambda x: x.strftime('%H:%M:%S') if pd.notnull(x) else None)
+
+    servicio['fecha_hora_solicitud'] = pd.to_datetime(servicio['fecha_solicitud_str'] + ' ' + servicio['hora_solicitud_str'])
+
     servicio['hora_solicitud'] = servicio['hora_solicitud'].apply(lambda x: x.hour if pd.notnull(x) else None)
 
-    servicio = servicio[['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'usuario_id']]
+    servicio = servicio[['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'usuario_id', 'fecha_hora_solicitud']]
 
     hecho_servicios = servicio.merge(cliente_usuario, left_on='usuario_id', right_on='id', how='left')[
-        ['id_x', 'cliente_id_x', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id']
+        ['id_x', 'cliente_id_x', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id', 'fecha_hora_solicitud']
     ].rename(columns={'id_x': 'id', 'cliente_id_x': 'cliente_id'})
 
     hecho_servicios = hecho_servicios.merge(dim_tiempo, left_on=['fecha_solicitud', 'hora_solicitud'], right_on=['fecha', 'hora_dia'], how='left')[
-        ['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id', 'key_dim_tiempo']
+        ['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id', 'key_dim_tiempo', 'fecha_hora_solicitud']
     ]
 
     hecho_servicios = hecho_servicios.merge(dim_sede, left_on='sede_id', right_on='id_sede', how='left')[
-        ['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id', 'key_dim_tiempo', 'key_dim_sede']
+        ['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id', 'key_dim_tiempo', 'key_dim_sede', 'fecha_hora_solicitud']
     ]
 
     hecho_servicios = hecho_servicios.merge(dim_cliente, left_on='cliente_id', right_on='id_cliente', how='left')[
         ['id', 'cliente_id', 'mensajero_id', 'fecha_solicitud', 'hora_solicitud', 'sede_id',
-         'key_dim_tiempo', 'key_dim_sede', 'key_dim_cliente']
+         'key_dim_tiempo', 'key_dim_sede', 'key_dim_cliente', 'fecha_hora_solicitud']
     ]
 
     hecho_servicios = hecho_servicios.merge(dim_mensajero, left_on='mensajero_id', right_on='id_mensajero', how='left')[
-        ['id', 'key_dim_tiempo', 'key_dim_sede', 'key_dim_cliente', 'key_dim_mensajero']
+        ['id', 'key_dim_tiempo', 'key_dim_sede', 'key_dim_cliente', 'key_dim_mensajero', 'fecha_hora_solicitud']
     ]
 
     # Renombrar columna id a id_servicio para coincidir con el esquema
-    hecho_servicios = hecho_servicios.rename(columns={'id': 'id_servicio'})
+    hecho_servicios = hecho_servicios.rename(columns={'id': 'id_servicio'}).drop_duplicates()
+    hecho_servicios.set_index('id_servicio', inplace=True)
+
+    # Calcular tiempos de servicio
+    for estado_id in [1,2,4,5]:
+        estado_servicio_id = estado_servicio[estado_servicio['estado_id'] == estado_id].copy()
+        estado_servicio_id['fecha'] = estado_servicio_id['fecha'].dt.strftime('%Y-%m-%d')
+        estado_servicio_id['hora'] = estado_servicio_id['hora'].apply(lambda x: x.strftime('%H:%M:%S') if pd.notnull(x) else None)
+        estado_servicio_id['fecha_hora'] = pd.to_datetime(estado_servicio_id['fecha'] + ' ' + estado_servicio_id['hora'])
+        estado_servicio_id = estado_servicio_id.groupby('servicio_id')['fecha_hora'].max().to_frame()
+        hecho_servicios[f'estado_{estado_id}_fecha_hora'] = hecho_servicios.index.map(
+            estado_servicio_id['fecha_hora']
+        )
+
+    hecho_servicios.reset_index(inplace=True)
 
     # Inicializar las columnas faltantes con None
-    hecho_servicios['tiempo_total_espera'] = None
-    hecho_servicios['tiempo_espera_inicial'] = None
-    hecho_servicios['tiempo_espera_asignado'] = None  
-    hecho_servicios['tiempo_espera_recogido'] = None
-    hecho_servicios['tiempo_espera_en_destino'] = None
+    hecho_servicios['tiempo_total_espera'] = hecho_servicios['estado_5_fecha_hora'] - hecho_servicios['fecha_hora_solicitud']
+    hecho_servicios['tiempo_espera_inicial'] = hecho_servicios['estado_1_fecha_hora'] - hecho_servicios['fecha_hora_solicitud']
+    hecho_servicios['tiempo_espera_asignado'] = hecho_servicios['estado_2_fecha_hora'] - hecho_servicios['estado_1_fecha_hora']  
+    hecho_servicios['tiempo_espera_recogido'] = hecho_servicios['estado_4_fecha_hora'] - hecho_servicios['estado_2_fecha_hora'] 
+    hecho_servicios['tiempo_espera_en_destino'] = hecho_servicios['estado_5_fecha_hora'] - hecho_servicios['estado_4_fecha_hora'] 
     hecho_servicios['cantidad_novedades_tipo_1'] = None
     hecho_servicios['cantidad_novedades_tipo_2'] = None
 
