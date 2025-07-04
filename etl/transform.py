@@ -11,7 +11,7 @@ from mlxtend.preprocessing import TransactionEncoder
 from pandas import DataFrame
 
 def transform_hecho_servicios(tablas: list[DataFrame]) -> DataFrame:
-    servicio, cliente_usuario, estado_servicio, dim_tiempo, dim_sede, dim_cliente, dim_mensajero = tablas
+    servicio, cliente_usuario, estado_servicio, novedad_servicio, dim_tiempo, dim_sede, dim_cliente, dim_mensajero = tablas
 
     # Asigna el mensajero usando una estrategia de respaldo - si mensajero3_id está vacío, usa mensajero2_id,
     # si mensajero2_id está vacío usa mensajero_id. Toma el primer valor no nulo encontrado.
@@ -64,18 +64,37 @@ def transform_hecho_servicios(tablas: list[DataFrame]) -> DataFrame:
             estado_servicio_id['fecha_hora']
         )
 
-    hecho_servicios.reset_index(inplace=True)
-
     # Inicializar las columnas faltantes con None
     hecho_servicios['tiempo_total_espera'] = hecho_servicios['estado_5_fecha_hora'] - hecho_servicios['fecha_hora_solicitud']
     hecho_servicios['tiempo_espera_inicial'] = hecho_servicios['estado_1_fecha_hora'] - hecho_servicios['fecha_hora_solicitud']
     hecho_servicios['tiempo_espera_asignado'] = hecho_servicios['estado_2_fecha_hora'] - hecho_servicios['estado_1_fecha_hora']  
     hecho_servicios['tiempo_espera_recogido'] = hecho_servicios['estado_4_fecha_hora'] - hecho_servicios['estado_2_fecha_hora'] 
     hecho_servicios['tiempo_espera_en_destino'] = hecho_servicios['estado_5_fecha_hora'] - hecho_servicios['estado_4_fecha_hora'] 
-    hecho_servicios['cantidad_novedades_tipo_1'] = None
-    hecho_servicios['cantidad_novedades_tipo_2'] = None
+    
+    # Calcular los tipos de novedades
+    for tipo_novedad in [1,2]:
+        novedad_servicio_tipo = novedad_servicio[novedad_servicio['tipo_novedad_id'] == tipo_novedad]
+        novedad_servicio_tipo = novedad_servicio_tipo.groupby('servicio_id').size().to_frame(f'cantidad_novedades_tipo_{tipo_novedad}')
+        hecho_servicios[f'cantidad_novedades_tipo_{tipo_novedad}'] = hecho_servicios.index.map(
+            novedad_servicio_tipo[f'cantidad_novedades_tipo_{tipo_novedad}']
+        ).fillna(0)
 
-    return hecho_servicios
+    hecho_servicios.reset_index(inplace=True)
+
+    return hecho_servicios[[
+        'id_servicio',
+        'key_dim_cliente',
+        'key_dim_mensajero', 
+        'key_dim_tiempo',
+        'key_dim_sede',
+        'tiempo_total_espera',
+        'tiempo_espera_inicial',
+        'tiempo_espera_asignado',
+        'tiempo_espera_recogido', 
+        'tiempo_espera_en_destino',
+        'cantidad_novedades_tipo_1',
+        'cantidad_novedades_tipo_2'
+    ]]
 
 
 def transform_tiempo(tablas: list[DataFrame]) -> DataFrame:
