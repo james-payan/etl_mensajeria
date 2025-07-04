@@ -86,7 +86,7 @@ if utils_etl.new_data(oltp_conn, olap_conn):
 
     # ---- Carga de Hechos ----
     print("Extraer datos de la base de datos OLTP para el hecho de servicios")
-    tablas_servicios_oltp = extract.extract(['mensajeria_servicio', 'clientes_usuarioaquitoy', 'mensajeria_estadosservicio'], oltp_conn)
+    tablas_servicios_oltp = extract.extract(['mensajeria_servicio', 'clientes_usuarioaquitoy', 'mensajeria_estadosservicio', 'mensajeria_novedadesservicio'], oltp_conn)
     print("Extraer datos de la base de datos OLAP para las dimensiones")
     tablas_dimensiones_olap = extract.extract(['dim_tiempo', 'dim_sede', 'dim_cliente', 'dim_mensajero'], olap_conn)
 
