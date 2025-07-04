@@ -93,9 +93,10 @@ if utils_etl.new_data(oltp_conn, olap_conn):
     print("transformando datos para el hecho de servicios")
     hecho_servicios = transform.transform_hecho_servicios(tablas_servicios_oltp + tablas_dimensiones_olap)
     print("total servicios: ", len(hecho_servicios))
+    #print(hecho_servicios.head(10))
 
     print("cargando datos en la base de datos OLAP para el hecho de servicios")
-    load.load(hecho_servicios, etl_conn=olap_conn, tname='hecho_servicios', replace=True)
+    load.load(hecho_servicios, etl_conn=olap_conn, tname='hecho_servicios', replace=False)
 
 
     print("Carga Satisfactoria hecho de servicios")
