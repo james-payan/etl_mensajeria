@@ -65,11 +65,12 @@ def transform_hecho_servicios(tablas: list[DataFrame]) -> DataFrame:
         )
 
     # Inicializar las columnas faltantes con None
-    hecho_servicios['tiempo_total_espera'] = hecho_servicios['estado_5_fecha_hora'] - hecho_servicios['fecha_hora_solicitud']
-    hecho_servicios['tiempo_espera_inicial'] = hecho_servicios['estado_1_fecha_hora'] - hecho_servicios['fecha_hora_solicitud']
-    hecho_servicios['tiempo_espera_asignado'] = hecho_servicios['estado_2_fecha_hora'] - hecho_servicios['estado_1_fecha_hora']  
-    hecho_servicios['tiempo_espera_recogido'] = hecho_servicios['estado_4_fecha_hora'] - hecho_servicios['estado_2_fecha_hora'] 
-    hecho_servicios['tiempo_espera_en_destino'] = hecho_servicios['estado_5_fecha_hora'] - hecho_servicios['estado_4_fecha_hora'] 
+    # Calcular las diferencias de tiempo y convertir a timedelta de pandas
+    hecho_servicios['tiempo_total_espera'] = (hecho_servicios['estado_5_fecha_hora'] - hecho_servicios['fecha_hora_solicitud']).apply(lambda x: None if pd.isna(x) else str(x))
+    hecho_servicios['tiempo_espera_inicial'] = (hecho_servicios['estado_1_fecha_hora'] - hecho_servicios['fecha_hora_solicitud']).apply(lambda x: None if pd.isna(x) else str(x))
+    hecho_servicios['tiempo_espera_asignado'] = (hecho_servicios['estado_2_fecha_hora'] - hecho_servicios['estado_1_fecha_hora']).apply(lambda x: None if pd.isna(x) else str(x))
+    hecho_servicios['tiempo_espera_recogido'] = (hecho_servicios['estado_4_fecha_hora'] - hecho_servicios['estado_2_fecha_hora']).apply(lambda x: None if pd.isna(x) else str(x))
+    hecho_servicios['tiempo_espera_en_destino'] = (hecho_servicios['estado_5_fecha_hora'] - hecho_servicios['estado_4_fecha_hora']).apply(lambda x: None if pd.isna(x) else str(x))
     
     # Calcular los tipos de novedades
     for tipo_novedad in [1,2]:
