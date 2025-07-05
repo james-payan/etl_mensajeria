@@ -71,13 +71,13 @@ def clean_hecho_servicios(hecho_servicios: DataFrame) -> DataFrame:
     before_time_clean = len(hecho_servicios_clean)
     
     # Eliminar filas donde tiempo_total_espera es nulo
-    hecho_servicios_final = hecho_servicios_clean.dropna(subset=['tiempo_total_espera'])
+    hecho_servicios_final = hecho_servicios_clean.dropna(subset=time_columns)
     
     after_time_clean = len(hecho_servicios_final)
     removed_time = before_time_clean - after_time_clean
     final_percentage = (after_time_clean / initial_count) * 100
     
-    print(f"Servicios eliminados por tiempo_total_espera faltante: {removed_time}")
+    print(f"Servicios eliminados por tiempos de espera faltantes: {removed_time}")
     print(f"Servicios restantes después de segunda limpieza: {after_time_clean}")
     print(f"Porcentaje final de cobertura: {final_percentage:.2f}%")
     print()
