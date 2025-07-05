@@ -10,6 +10,88 @@ from mlxtend.frequent_patterns import apriori
 from mlxtend.preprocessing import TransactionEncoder
 from pandas import DataFrame
 
+def clean_hecho_servicios(hecho_servicios: DataFrame) -> DataFrame:
+    """
+    Limpia el DataFrame hecho_servicios analizando y eliminando registros con valores nulos
+    en las llaves de dimensiones y columnas relacionadas con tiempo.
+    
+    Args:
+        hecho_servicios: DataFrame con datos de servicios
+        
+    Returns:
+        DataFrame: DataFrame hecho_servicios limpio
+    """
+    # Almacenar conteo inicial
+    initial_count = len(hecho_servicios)
+    print(f"=== ANÁLISIS DE LIMPIEZA DE HECHO_SERVICIOS ===")
+    print(f"Número inicial de servicios: {initial_count}")
+    print()
+    
+    # Paso 1: Analizar valores nulos en llaves de dimensiones
+    dimension_columns = ['key_dim_cliente', 'key_dim_mensajero', 'key_dim_tiempo', 'key_dim_sede']
+    
+    print("=== ANÁLISIS DE VALORES NULOS EN DIMENSIONES ===")
+    for col in dimension_columns:
+        null_count = hecho_servicios[col].isnull().sum()
+        null_percentage = (null_count / initial_count) * 100
+        print(f"{col}: {null_count} servicios nulos ({null_percentage:.2f}%)")
+    
+    print()
+    
+    # Paso 2: Eliminar servicios con llaves de dimensión faltantes
+    print("=== PRIMERA LIMPIEZA: ELIMINAR SERVICIOS CON DIMENSIONES FALTANTES ===")
+    before_dim_clean = len(hecho_servicios)
+    
+    # Eliminar filas donde cualquier llave de dimensión sea nula
+    hecho_servicios_clean = hecho_servicios.dropna(subset=dimension_columns)
+    
+    after_dim_clean = len(hecho_servicios_clean)
+    removed_dim = before_dim_clean - after_dim_clean
+    remaining_percentage = (after_dim_clean / initial_count) * 100
+    
+    print(f"Servicios eliminados por dimensiones faltantes: {removed_dim}")
+    print(f"Servicios restantes después de primera limpieza: {after_dim_clean}")
+    print(f"Porcentaje de cobertura: {remaining_percentage:.2f}%")
+    print()
+    
+    # Paso 3: Analizar valores nulos en columnas de tiempo
+    time_columns = ['tiempo_total_espera', 'tiempo_espera_inicial', 'tiempo_espera_asignado', 
+                   'tiempo_espera_recogido', 'tiempo_espera_en_destino']
+    
+    print("=== ANÁLISIS DE VALORES NULOS EN COLUMNAS DE TIEMPO ===")
+    for col in time_columns:
+        null_count = hecho_servicios_clean[col].isnull().sum()
+        null_percentage = (null_count / after_dim_clean) * 100
+        print(f"{col}: {null_count} servicios nulos ({null_percentage:.2f}%)")
+    
+    print()
+    
+    # Paso 4: Eliminar servicios con tiempo total de espera faltante
+    print("=== SEGUNDA LIMPIEZA: ELIMINAR SERVICIOS CON TIEMPO_TOTAL_ESPERA FALTANTE ===")
+    before_time_clean = len(hecho_servicios_clean)
+    
+    # Eliminar filas donde tiempo_total_espera es nulo
+    hecho_servicios_final = hecho_servicios_clean.dropna(subset=['tiempo_total_espera'])
+    
+    after_time_clean = len(hecho_servicios_final)
+    removed_time = before_time_clean - after_time_clean
+    final_percentage = (after_time_clean / initial_count) * 100
+    
+    print(f"Servicios eliminados por tiempo_total_espera faltante: {removed_time}")
+    print(f"Servicios restantes después de segunda limpieza: {after_time_clean}")
+    print(f"Porcentaje final de cobertura: {final_percentage:.2f}%")
+    print()
+    
+    # Resumen
+    print("=== RESUMEN DE LIMPIEZA ===")
+    print(f"Total de servicios eliminados: {initial_count - after_time_clean}")
+    print(f"Servicios finales: {after_time_clean}")
+    print(f"Cobertura final: {final_percentage:.2f}%")
+    print("=" * 50)
+    
+    return hecho_servicios_final
+
+
 def transform_hecho_servicios(tablas: list[DataFrame]) -> DataFrame:
     servicio, cliente_usuario, estado_servicio, novedad_servicio, dim_tiempo, dim_sede, dim_cliente, dim_mensajero = tablas
 
@@ -82,7 +164,7 @@ def transform_hecho_servicios(tablas: list[DataFrame]) -> DataFrame:
 
     hecho_servicios.reset_index(inplace=True)
 
-    return hecho_servicios[[
+    return clean_hecho_servicios(hecho_servicios[[
         'id_servicio',
         'key_dim_cliente',
         'key_dim_mensajero', 
@@ -95,7 +177,7 @@ def transform_hecho_servicios(tablas: list[DataFrame]) -> DataFrame:
         'tiempo_espera_en_destino',
         'cantidad_novedades_tipo_1',
         'cantidad_novedades_tipo_2'
-    ]]
+    ]])
 
 
 def transform_tiempo(tablas: list[DataFrame]) -> DataFrame:
